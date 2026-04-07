@@ -11,13 +11,12 @@ from solagent.utils.jupiter import (
 
 TOKEN_DECIMALS = {
     "SOL": 9,
-    "USDC": 6,
-    "USDT": 6,
+    "USDC": 6, "USDT": 6,
     "BONK": 5,
-    "JUP": 6,
-    "RAY": 6,
-    "ORCA": 6,
+    "JUP": 6, "RAY": 6, "ORCA": 6,
 }
+
+MAX_SWAP_AMOUNT_SOL = 1000
 
 
 def _get_decimals(token: str) -> int:
@@ -42,9 +41,9 @@ async def get_swap_quote(
         return {"error": "Amount must be positive."}
 
     try:
-        slippage_bps = max(1, min(slippage_bps, 500))
+        slippage_bps = max(1, min(slippage_bps, 100))
         in_decimals = _get_decimals(input_token)
-        amount_raw = int(amount * (10 ** in_decimals))
+        amount_raw = int(round(amount * (10 ** in_decimals)))
 
         input_mint = resolve_mint(input_token)
         output_mint = resolve_mint(output_token)
@@ -65,7 +64,7 @@ async def get_swap_quote(
             "_raw_quote": quote,
         }
     except (httpx.HTTPError, ValueError) as exc:
-        return {"error": f"Quote failed: {type(exc).__name__}: {exc}"}
+        return {"error": f"Quote failed: {type(exc).__name__}"}
     except Exception as exc:
         return {"error": f"Quote failed: {type(exc).__name__}"}
 
@@ -91,7 +90,10 @@ async def execute_swap(
         if "error" in quote_result:
             return quote_result
 
-        raw_quote = quote_result.pop("_raw_quote")
+        raw_quote = quote_result.pop("_raw_quote", None)
+        if raw_quote is None:
+            return {"error": "Missing quote data."}
+
         swap_tx = await get_swap_transaction(raw_quote, wallet_public_key)
 
         return {
@@ -105,6 +107,6 @@ async def execute_swap(
             ),
         }
     except (httpx.HTTPError, ValueError) as exc:
-        return {"error": f"Swap failed: {type(exc).__name__}: {exc}"}
+        return {"error": f"Swap failed: {type(exc).__name__}"}
     except Exception as exc:
         return {"error": f"Swap failed: {type(exc).__name__}"}

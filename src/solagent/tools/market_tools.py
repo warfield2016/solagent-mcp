@@ -53,7 +53,7 @@ async def search_token(query: str) -> dict:
 
 
 async def get_trending_tokens() -> dict:
-    """Get top trending Solana tokens."""
+    """Get top boosted Solana tokens on DexScreener."""
     try:
         trending = await _get_trending()
         return {"count": len(trending), "trending_tokens": trending}

@@ -4,7 +4,7 @@ from solders.pubkey import Pubkey
 
 from solagent.utils.solana_client import solana
 from solagent.utils.jupiter import resolve_mint
-from solagent.utils.market import get_token_price
+from solagent.utils.market import get_token_price, _safe_float
 
 
 def _validate_address(address: str) -> str | None:
@@ -23,7 +23,7 @@ async def get_sol_balance(address: str) -> dict:
     try:
         balance = await solana.get_balance(address)
         sol_price_info = await get_token_price(resolve_mint("SOL"))
-        usd_price = float(sol_price_info.get("price", 0)) if sol_price_info else 0
+        usd_price = _safe_float(sol_price_info.get("price")) if sol_price_info else 0.0
 
         return {
             "address": address,

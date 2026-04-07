@@ -6,13 +6,13 @@ import re
 
 import httpx
 
-HELIUS_API_KEY = os.environ.get("HELIUS_API_KEY", "")
-SOLANA_RPC_URL = os.environ.get(
-    "SOLANA_RPC_URL",
-    f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
-    if HELIUS_API_KEY
-    else "https://api.mainnet-beta.solana.com",
+_HELIUS_API_KEY = os.environ.get("HELIUS_API_KEY", "")
+_DEFAULT_RPC = (
+    f"https://mainnet.helius-rpc.com/?api-key={_HELIUS_API_KEY}"
+    if _HELIUS_API_KEY
+    else "https://api.mainnet-beta.solana.com"
 )
+SOLANA_RPC_URL = os.environ.get("SOLANA_RPC_URL", _DEFAULT_RPC)
 
 LAMPORTS_PER_SOL = 1_000_000_000
 
@@ -58,15 +58,19 @@ class SolanaClient:
 
         data = resp.json()
         if "error" in data:
-            raise Exception(f"RPC error: {data['error']}")
-        return data.get("result", {})
+            err = data["error"]
+            code = err.get("code", "unknown") if isinstance(err, dict) else "unknown"
+            raise Exception(f"RPC error code {code}")
+        if "result" not in data:
+            raise Exception("RPC response missing 'result' key")
+        return data["result"]
 
     async def get_balance(self, address: str) -> float:
         result = await self.rpc_call("getBalance", [address])
         return result.get("value", 0) / LAMPORTS_PER_SOL
 
     async def get_token_accounts(self, address: str) -> list[dict]:
-        """Query both Token Program and Token-2022 accounts, merge results."""
+        """Query both Token Program and Token-2022 accounts."""
         seen_mints: set[str] = set()
         accounts: list[dict] = []
 
@@ -103,6 +107,8 @@ class SolanaClient:
             "getSignaturesForAddress",
             [address, {"limit": limit}],
         )
+        if not isinstance(signatures, list):
+            return []
         return [
             {
                 "signature": s["signature"],

@@ -66,7 +66,6 @@ async def get_swap_transaction(
                     "userPublicKey": user_public_key,
                     "wrapAndUnwrapSol": True,
                     "dynamicComputeUnitLimit": True,
-                    "prioritizationFeeLamports": "auto",
                 },
             )
             resp.raise_for_status()

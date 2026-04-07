@@ -20,7 +20,7 @@ async def send_sol(to_address: str, amount_sol: float) -> dict:
     if amount_sol > MAX_TRANSFER_SOL:
         return {"error": f"Amount exceeds safety cap of {MAX_TRANSFER_SOL} SOL."}
 
-    lamports = int(amount_sol * LAMPORTS_PER_SOL)
+    lamports = int(round(amount_sol * LAMPORTS_PER_SOL))
 
     return {
         "status": "unsigned",
