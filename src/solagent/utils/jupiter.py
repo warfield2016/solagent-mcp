@@ -19,8 +19,7 @@ KNOWN_TOKENS = {
 
 def resolve_mint(token: str) -> str:
     """Resolve token symbol to mint address. Passes through raw addresses."""
-    upper = token.upper()
-    return KNOWN_TOKENS.get(upper, token)
+    return KNOWN_TOKENS.get(token.upper(), token)
 
 
 async def get_swap_quote(
@@ -30,18 +29,27 @@ async def get_swap_quote(
     slippage_bps: int = 50,
 ) -> dict:
     """Fetch a swap quote from Jupiter."""
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.get(
-            JUPITER_QUOTE_URL,
-            params={
-                "inputMint": input_mint,
-                "outputMint": output_mint,
-                "amount": str(amount_raw),
-                "slippageBps": slippage_bps,
-            },
-        )
-        resp.raise_for_status()
-        return resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                JUPITER_QUOTE_URL,
+                params={
+                    "inputMint": input_mint,
+                    "outputMint": output_mint,
+                    "amount": str(amount_raw),
+                    "slippageBps": slippage_bps,
+                },
+            )
+            resp.raise_for_status()
+            return resp.json()
+    except httpx.HTTPStatusError as exc:
+        raise Exception(
+            f"Jupiter quote API returned HTTP {exc.response.status_code}"
+        ) from exc
+    except httpx.RequestError as exc:
+        raise Exception(
+            f"Jupiter quote request failed: {type(exc).__name__}"
+        ) from exc
 
 
 async def get_swap_transaction(
@@ -49,16 +57,25 @@ async def get_swap_transaction(
     user_public_key: str,
 ) -> dict:
     """Build a swap transaction from a Jupiter quote."""
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.post(
-            JUPITER_SWAP_URL,
-            json={
-                "quoteResponse": quote_response,
-                "userPublicKey": user_public_key,
-                "wrapAndUnwrapSol": True,
-                "dynamicComputeUnitLimit": True,
-                "prioritizationFeeLamports": "auto",
-            },
-        )
-        resp.raise_for_status()
-        return resp.json()
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                JUPITER_SWAP_URL,
+                json={
+                    "quoteResponse": quote_response,
+                    "userPublicKey": user_public_key,
+                    "wrapAndUnwrapSol": True,
+                    "dynamicComputeUnitLimit": True,
+                    "prioritizationFeeLamports": "auto",
+                },
+            )
+            resp.raise_for_status()
+            return resp.json()
+    except httpx.HTTPStatusError as exc:
+        raise Exception(
+            f"Jupiter swap API returned HTTP {exc.response.status_code}"
+        ) from exc
+    except httpx.RequestError as exc:
+        raise Exception(
+            f"Jupiter swap request failed: {type(exc).__name__}"
+        ) from exc

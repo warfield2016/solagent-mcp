@@ -1,4 +1,4 @@
-"""Wallet tools — balance, tokens, transactions."""
+"""Wallet tools -- balance, tokens, transactions."""
 
 from solders.pubkey import Pubkey
 
@@ -20,16 +20,19 @@ async def get_sol_balance(address: str) -> dict:
     if err := _validate_address(address):
         return {"error": err}
 
-    balance = await solana.get_balance(address)
-    sol_price_info = await get_token_price(resolve_mint("SOL"))
-    usd_price = float(sol_price_info.get("price", 0)) if sol_price_info else 0
+    try:
+        balance = await solana.get_balance(address)
+        sol_price_info = await get_token_price(resolve_mint("SOL"))
+        usd_price = float(sol_price_info.get("price", 0)) if sol_price_info else 0
 
-    return {
-        "address": address,
-        "balance_sol": round(balance, 6),
-        "balance_usd": round(balance * usd_price, 2),
-        "sol_price_usd": round(usd_price, 2),
-    }
+        return {
+            "address": address,
+            "balance_sol": round(balance, 6),
+            "balance_usd": round(balance * usd_price, 2),
+            "sol_price_usd": round(usd_price, 2),
+        }
+    except Exception as exc:
+        return {"error": f"Failed to fetch balance: {type(exc).__name__}"}
 
 
 async def get_token_balances(address: str) -> dict:
@@ -37,12 +40,15 @@ async def get_token_balances(address: str) -> dict:
     if err := _validate_address(address):
         return {"error": err}
 
-    tokens = await solana.get_token_accounts(address)
-    return {
-        "address": address,
-        "token_count": len(tokens),
-        "tokens": tokens,
-    }
+    try:
+        tokens = await solana.get_token_accounts(address)
+        return {
+            "address": address,
+            "token_count": len(tokens),
+            "tokens": tokens,
+        }
+    except Exception as exc:
+        return {"error": f"Failed to fetch token balances: {type(exc).__name__}"}
 
 
 async def get_transaction_history(address: str, limit: int = 10) -> dict:
@@ -50,10 +56,13 @@ async def get_transaction_history(address: str, limit: int = 10) -> dict:
     if err := _validate_address(address):
         return {"error": err}
 
-    limit = max(1, min(limit, 20))
-    txs = await solana.get_recent_transactions(address, limit=limit)
-    return {
-        "address": address,
-        "transaction_count": len(txs),
-        "transactions": txs,
-    }
+    try:
+        limit = max(1, min(limit, 20))
+        txs = await solana.get_recent_transactions(address, limit=limit)
+        return {
+            "address": address,
+            "transaction_count": len(txs),
+            "transactions": txs,
+        }
+    except Exception as exc:
+        return {"error": f"Failed to fetch transactions: {type(exc).__name__}"}

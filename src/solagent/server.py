@@ -1,4 +1,4 @@
-"""SolAgent MCP Server — Solana tools for AI agents."""
+"""FastMCP server exposing Solana RPC, Jupiter swap, and market data tools."""
 
 import json
 from mcp.server.fastmcp import FastMCP
