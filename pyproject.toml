@@ -22,7 +22,7 @@ dependencies = [
 solagent = "solagent.server:main"
 
 [project.urls]
-Repository = "https://github.com/anthropic-solagent/solagent-mcp"
+Repository = "https://github.com/warfield2016/solagent-mcp"
 
 [build-system]
 requires = ["hatchling"]

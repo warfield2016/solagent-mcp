@@ -120,6 +120,46 @@ class SolanaClient:
             for s in signatures
         ]
 
+    async def get_mint_info(self, mint_address: str) -> dict:
+        """Get mint account info (decimals, supply, etc.)."""
+        result = await self.rpc_call(
+            "getAccountInfo",
+            [mint_address, {"encoding": "jsonParsed"}],
+        )
+        value = result.get("value")
+        if not value:
+            return {}
+        try:
+            parsed = value["data"]["parsed"]["info"]
+            return {
+                "decimals": parsed.get("decimals", 0),
+                "supply": parsed.get("supply", "0"),
+                "mint_authority": parsed.get("mintAuthority"),
+                "freeze_authority": parsed.get("freezeAuthority"),
+                "is_initialized": parsed.get("isInitialized", False),
+            }
+        except (KeyError, TypeError):
+            return {}
+
+    async def get_account_info(self, address: str) -> dict:
+        """Get basic account info for any Solana address."""
+        result = await self.rpc_call(
+            "getAccountInfo",
+            [address, {"encoding": "jsonParsed"}],
+        )
+        value = result.get("value")
+        if not value:
+            return {"exists": False, "address": address}
+        return {
+            "exists": True,
+            "address": address,
+            "lamports": value.get("lamports", 0),
+            "sol": value.get("lamports", 0) / LAMPORTS_PER_SOL,
+            "owner": value.get("owner", ""),
+            "executable": value.get("executable", False),
+            "rent_epoch": value.get("rentEpoch"),
+        }
+
     async def get_latest_blockhash(self) -> str:
         result = await self.rpc_call(
             "getLatestBlockhash", [{"commitment": "finalized"}]
